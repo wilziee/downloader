@@ -1,0 +1,12 @@
+{
+  "name": "tiktok-downloader-neobrutalism",
+  "version": "1.0.0",
+  "description": "Premium TikTok Downloader Web App with Neo-brutalism Style",
+  "main": "api/scrape.js",
+  "scripts": {
+    "start": "node api/scrape.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8"
+  }
+}
