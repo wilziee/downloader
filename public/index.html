@@ -1,1 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAERISOFT Downloader</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-dark: #050816;
+            --bg-mid: #081021;
+            --bg-light: #101A45;
+            --accent-1: #6C63FF;
+            --accent-2: #8B5CF6;
+            --accent-3: #00D9FF;
+            --text-main: #FFFFFF;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --glass-bg: rgba(16, 26, 69, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --transition-smooth: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; overflow-x: hidden; display: flex; flex-direction: column; }
+
+        canvas#universe-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; }
+
+        .aurora { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.5; z-index: -1; animation: floatAurora 20s ease-in-out infinite alternate; pointer-events: none; will-change: transform; }
+        .aurora-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--accent-1); }
+        .aurora-2 { bottom: -10%; right: -10%; width: 45vw; height: 45vw; background: var(--accent-2); animation-delay: -5s; }
+        .aurora-3 { top: 30%; left: 40%; width: 40vw; height: 40vw; background: var(--accent-3); opacity: 0.3; animation-delay: -10s; }
+
+        @keyframes floatAurora { 0% { transform: translate3d(0, 0, 0) scale(1); } 100% { transform: translate3d(50px, 50px, 0) scale(1.1); } }
+
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: 20px; }
+
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; margin: 20px auto; width: 90%; max-width: 1200px; transition: var(--transition-smooth); border-radius: 16px; }
+        .navbar:hover { box-shadow: 0 0 20px rgba(108, 99, 255, 0.2); }
+        .logo-container { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 1.5rem; color: var(--accent-3); }
+        .logo-text { font-weight: 700; letter-spacing: 1px; font-size: 1.2rem; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-link { color: var(--text-muted); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: var(--accent-3); }
+
+        .container { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 50px 20px; }
+        .hero-section { text-align: center; max-width: 700px; width: 100%; }
+        .title { font-size: 3.5rem; font-weight: 800; margin-bottom: 10px; }
+        .text-gradient { background: linear-gradient(135deg, var(--accent-3), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px; font-weight: 500; letter-spacing: 2px; }
+
+        .input-wrapper { display: flex; align-items: center; padding: 8px; position: relative; transition: var(--transition-smooth); }
+        .input-wrapper:focus-within { border-color: var(--accent-1); box-shadow: 0 0 25px rgba(108, 99, 255, 0.3); }
+        .input-icon { font-size: 1.5rem; margin-left: 15px; color: var(--text-muted); }
+        .input-wrapper input { flex: 1; background: transparent; border: none; padding: 15px 20px; font-size: 1.1rem; color: var(--text-main); outline: none; }
+        .input-wrapper input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+        .btn-premium { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); border: none; padding: 15px 30px; border-radius: 14px; color: white; font-weight: 600; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease; position: relative; overflow: hidden; }
+        .btn-premium:hover { transform: scale(1.05); box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5); }
+        .btn-premium:active { transform: scale(0.95); }
+
+        .loader { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .result-card { margin-top: 40px; width: 100%; max-width: 700px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); animation: slideUp 0.5s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-content { display: flex; gap: 20px; }
+        .video-preview img { width: 150px; height: 200px; object-fit: cover; border-radius: 12px; }
+        .video-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .video-title { font-size: 1.2rem; margin-bottom: 20px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .action-buttons { display: flex; flex-direction: column; gap: 10px; }
+        .btn-action { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 10px; text-decoration: none; font-weight: 600; color: white; transition: var(--transition-smooth); }
+        .btn-action.primary { background: var(--accent-1); }
+        .btn-action.secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-action.tertiary { background: var(--bg-dark); border: 1px solid var(--accent-3); color: var(--accent-3); }
+        .btn-action:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+        .skeleton-wrapper { display: flex; gap: 20px; }
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+        .skeleton-img { width: 150px; height: 200px; border-radius: 12px; }
+        .skeleton-details { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 15px; }
+        .skeleton-text { height: 20px; width: 100%; }
+        .skeleton-text.short { width: 60%; }
+        .skeleton-btn { height: 45px; width: 100%; border-radius: 10px; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); padding: 15px 25px; border-radius: 12px; display: flex; align-items: center; gap: 12px; transform: translateX(120%); opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast.success i { color: #10B981; }
+        .toast.error i { color: #EF4444; }
+
+        footer { padding: 30px; text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); }
+        .creator { margin-top: 5px; color: var(--accent-3); font-weight: 600; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .title { font-size: 2.5rem; }
+            .input-wrapper { flex-direction: column; border-radius: 20px; background: transparent; border: none; padding: 0; }
+            .input-wrapper input { width: 100%; border-radius: 15px; background: var(--glass-bg); padding: 20px; border: 1px solid var(--glass-border); margin-bottom: 10px; text-align: center; }
+            .input-icon { display: none; }
+            .btn-premium { width: 100%; justify-content: center; padding: 20px; }
+            .result-content, .skeleton-wrapper { flex-direction: column; align-items: center; text-align: center; }
+            .video-preview img, .skeleton-img { width: 100%; height: auto; aspect-ratio: 9/16; max-width: 250px; }
+            .navbar { flex-direction: column; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Universe Background Elements -->
+    <canvas id="universe-canvas"></canvas>
+    <div class="aurora aurora-1"></div>
+    <div class="aurora aurora-2"></div>
+    <div class="aurora aurora-3"></div>
+
+    <!-- Header -->
+    <header class="navbar glass-panel">
+        <div class="logo-container">
+            <i class="ph-fill ph-planet logo-icon"></i>
+            <span class="logo-text">XAERISOFT</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="nav-link">Home</a>
+            <a href="#about" class="nav-link">About</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="hero-section">
+            <h1 class="title">Universe <span class="text-gradient">Downloader</span></h1>
+            <p class="subtitle">Fast • Secure • No Watermark</p>
+            
+            <div class="input-wrapper glass-panel glow-border">
+                <i class="ph ph-link input-icon"></i>
+                <input type="text" id="url-input" placeholder="Paste TikTok URL here..." autocomplete="off">
+                <button id="download-btn" class="btn-premium">
+                    <span class="btn-text">Download</span>
+                    <i class="ph ph-paper-plane-tilt btn-icon"></i>
+                    <div class="loader" style="display: none;"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Card (Hidden by default) -->
+        <div id="result-card" class="result-card glass-panel" style="display: none;">
+            <!-- Skeleton Loader -->
+            <div id="skeleton-loader" class="skeleton-wrapper">
+                <div class="skeleton skeleton-img"></div>
+                <div class="skeleton-details">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                    <div class="skeleton-buttons">
+                        <div class="skeleton skeleton-btn"></div>
+                        <div class="skeleton skeleton-btn"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actual Result Content -->
+            <div id="result-content" class="result-content" style="display: none;">
+                <div class="video-preview">
+                    <img id="result-thumbnail" src="" alt="Thumbnail">
+                </div>
+                <div class="video-info">
+                    <h3 id="result-title" class="video-title">Video Title</h3>
+                    <div class="action-buttons">
+                        <a id="btn-no-watermark" href="#" class="btn-action primary" target="_blank">
+                            <i class="ph ph-video"></i> No Watermark
+                        </a>
+                        <a id="btn-watermark" href="#" class="btn-action secondary" target="_blank">
+                            <i class="ph ph-download-simple"></i> Watermark
+                        </a>
+                        <a id="btn-audio" href="#" class="btn-action tertiary" target="_blank">
+                            <i class="ph ph-music-notes"></i> Audio Only
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 XAERISOFT</p>
+        <p class="creator">Created by Wil</p>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initUniverse();
+            setupDownloader();
+        });
+
+        // UNIVERSE CANVAS ANIMATION (60 FPS)
+        function initUniverse() {
+            const canvas = document.getElementById('universe-canvas');
+            const ctx = canvas.getContext('2d', { alpha: false });
+            let width, height;
+            let stars = [];
+            let meteors = [];
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for (let i = 0; i < 150; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    r: Math.random() * 1.5,
+                    alpha: Math.random(),
+                    velocity: (Math.random() * 0.02) + 0.005
+                });
+            }
+
+            function animate() {
+                ctx.fillStyle = '#050816'; 
+                ctx.fillRect(0, 0, width, height);
+
+                stars.forEach(star => {
+                    star.alpha += star.velocity;
+                    if (star.alpha <= 0 || star.alpha >= 1) star.velocity = -star.velocity;
+                    
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(star.alpha)})`;
+                    ctx.fill();
+                });
+
+                if (Math.random() < 0.02) { 
+                    meteors.push({
+                        x: Math.random() * width,
+                        y: 0,
+                        length: Math.random() * 80 + 20,
+                        speed: Math.random() * 10 + 15,
+                        opacity: 1
+                    });
+                }
+
+                meteors.forEach((m, index) => {
+                    ctx.beginPath();
+                    ctx.moveTo(m.x, m.y);
+                    ctx.lineTo(m.x - m.length, m.y + m.length);
+                    ctx.strokeStyle = `rgba(0, 217, 255, ${m.opacity})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    m.x -= m.speed;
+                    m.y += m.speed;
+                    m.opacity -= 0.03;
+
+                    if (m.opacity <= 0) meteors.splice(index, 1);
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // TOAST NOTIFICATION SYSTEM
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'ph-check-circle' : 'ph-warning-circle';
+            toast.innerHTML = `<i class="ph-fill ${icon}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => toast.classList.add('show'));
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        }
+
+        // DOWNLOADER UX & LOGIC INTEGRATION
+        function setupDownloader() {
+            const input = document.getElementById('url-input');
+            const btn = document.getElementById('download-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnIcon = btn.querySelector('.btn-icon');
+            const loader = btn.querySelector('.loader');
+            
+            const card = document.getElementById('result-card');
+            const skeleton = document.getElementById('skeleton-loader');
+            const content = document.getElementById('result-content');
+
+            btn.addEventListener('click', async () => {
+                const url = input.value.trim();
+                if (!url) {
+                    showToast('Please enter a valid TikTok URL', 'error');
+                    return;
+                }
+
+                btn.disabled = true;
+                btnText.style.display = 'none';
+                btnIcon.style.display = 'none';
+                loader.style.display = 'block';
+                
+                card.style.display = 'block';
+                skeleton.style.display = 'flex';
+                content.style.display = 'none';
+
+                try {
+                    // ========================================================
+                    // ⚠️ TEMPATKAN API LU DI SINI
+                    // Ganti setTimeout ini dengan fetch dari API /scrape.js lu
+                    // ========================================================
+                    const data = await new Promise((resolve) => setTimeout(() => {
+                        resolve({
+                            title: "XAERISOFT Awesome TikTok Video",
+                            thumbnail: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=500&q=80",
+                            no_watermark: "#",
+                            watermark: "#",
+                            audio: "#"
+                        });
+                    }, 2000));
+                    
+                    document.getElementById('result-thumbnail').src = data.thumbnail;
+                    document.getElementById('result-title').innerText = data.title;
+                    document.getElementById('btn-no-watermark').href = data.no_watermark;
+                    document.getElementById('btn-watermark').href = data.watermark;
+                    document.getElementById('btn-audio').href = data.audio;
+
+                    skeleton.style.display = 'none';
+                    content.style.display = 'flex';
+                    showToast('Video processed successfully!');
+
+                } catch (error) {
+                    card.style.display = 'none';
+                    showToast('Failed to get video. Please try again.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btnText.style.display = 'block';
+                    btnIcon.style.display = 'block';
+                    loader.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
